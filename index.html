@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ZeeStudios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00e676;
+    --green-dim: #00b85a;
+    --green-glow: rgba(0,230,118,0.18);
+    --red: #ff3b3b;
+    --red-glow: rgba(255,59,59,0.2);
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #181818;
+    --bg4: #222222;
+    --bg5: #2a2a2a;
+    --border: #2c2c2c;
+    --border2: #383838;
+    --text: #f0f0f0;
+    --text2: #a0a0a0;
+    --text3: #606060;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --transition: 0.18s ease;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); }
+  button { cursor: pointer; font-family: var(--sans); border: none; outline: none; background: none; }
+  input, select { font-family: var(--sans); outline: none; }
+  canvas { display: block; }
+
+  /* ─── SCREENS ─── */
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .screen.hidden { display: none !important; }
+
+  /* ─── TOAST ─── */
+  #toast-container {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    z-index: 9999; pointer-events: none;
+  }
+  .toast {
+    background: var(--bg4); border: 1px solid var(--border2);
+    color: var(--text); font-size: 13px; padding: 9px 18px;
+    border-radius: 99px; font-family: var(--mono);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+    animation: toastIn 0.25s ease, toastOut 0.3s ease 1.8s forwards;
+    white-space: nowrap;
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  @keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes toastOut { to { opacity:0; transform:translateY(-6px); } }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.hidden { display: none !important; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 28px 24px;
+    width: min(420px, 92vw); max-height: 80vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 17px; font-weight: 600; margin-bottom: 18px; color: var(--text); }
+  .modal-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn { padding: 9px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; transition: var(--transition); }
+  .btn-primary { background: var(--green); color: #000; font-weight: 600; }
+  .btn-primary:hover { background: #00ff88; }
+  .btn-ghost { border: 1px solid var(--border2); color: var(--text2); }
+  .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+  .btn-danger { border: 1px solid var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(255,59,59,0.1); }
+
+  /* ─────────────────────────── HOME SCREEN ─────────────────────────── */
+  #screen-home { background: var(--bg); }
+  .home-header {
+    padding: 32px 24px 0;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    flex-shrink: 0;
+  }
+  .home-logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-mark {
+    width: 36px; height: 36px; background: var(--green);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 18px var(--green-glow);
+  }
+  .logo-mark svg { width: 20px; height: 20px; fill: #000; }
+  .logo-text { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--green); }
+  .home-meta { font-size: 12px; color: var(--text3); font-family: var(--mono); text-align: right; line-height: 1.5; }
+
+  .home-body { flex: 1; overflow-y: auto; padding: 24px; }
+  .home-section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.4px;
+    text-transform: uppercase; color: var(--text3); margin-bottom: 14px;
+  }
+  .new-project-btn {
+    width: 100%; padding: 16px; border-radius: var(--radius);
+    border: 1.5px dashed var(--green-dim); background: var(--green-glow);
+    color: var(--green); font-size: 15px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: var(--transition); margin-bottom: 28px;
+  }
+  .new-project-btn:hover { background: rgba(0,230,118,0.1); border-color: var(--green); box-shadow: 0 0 20px var(--green-glow); }
+  .new-project-btn svg { width: 20px; height: 20px; }
+
+  .project-list { display: flex; flex-direction: column; gap: 10px; }
+  .project-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    transition: var(--transition);
+  }
+  .project-card:hover { border-color: var(--border2); }
+  .project-card-icon {
+    width: 40px; height: 40px; background: var(--bg3);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .project-card-icon svg { width: 18px; height: 18px; fill: var(--green); }
+  .project-card-info { flex: 1; min-width: 0; }
+  .project-card-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .project-card-meta { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 3px; }
+  .project-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    background: var(--bg3); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition); color: var(--text2);
+  }
+  .icon-btn:hover { background: var(--bg4); border-color: var(--border2); color: var(--text); }
+  .icon-btn.danger:hover { border-color: var(--red); color: var(--red); background: rgba(255,59,59,0.07); }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
+  .empty-state svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; fill: var(--text3); }
+  .empty-state p { font-size: 14px; }
+
+  /* ─────────────────────────── STUDIO SCREEN ─────────────────────────── */
+  #screen-studio { background: var(--bg); }
+
+  /* Top Bar */
+  .studio-topbar {
+    height: 54px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0; padding: 0 12px;
+    flex-shrink: 0; position: relative;
+  }
+  .topbar-back {
+    width: 38px; height: 38px; border-radius: 8px; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); color: var(--text2); flex-shrink: 0;
+    transition: var(--transition);
+  }
+  .topbar-back:hover { color: var(--text); border-color: var(--border2); }
+  .topbar-back svg { width: 18px; height: 18px; }
+  .topbar-title {
+    flex: 1; text-align: center; font-size: 14px; font-weight: 600;
+    font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 0 8px;
+  }
+  .topbar-title span { color: var(--green); margin-right: 6px; font-size: 11px; }
+  .topbar-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .topbar-timer {
+    font-family: var(--mono); font-size: 13px; color: var(--text2);
+    background: var(--bg3); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 6px;
+    min-width: 64px; text-align: center;
+  }
+  .topbar-timer.recording { color: var(--red); border-color: var(--red); animation: timerPulse 1s infinite; }
+  @keyframes timerPulse { 50% { opacity: 0.6; } }
+  .three-dots-btn {
+    width: 38px; height: 38px; border-radius: 8px; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); color: var(--text2);
+    transition: var(--transition); position: relative;
+  }
+  .three-dots-btn:hover { color: var(--text); border-color: var(--border2); }
+
+  /* Three-dots menu */
+  .dots-menu {
+    position: absolute; top: calc(100% + 6px); right: 12px;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius); min-width: 220px; z-index: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.8); overflow: hidden;
+  }
+  .dots-menu.hidden { display: none !important; }
+  .dots-menu-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; font-size: 14px; color: var(--text2);
+    transition: var(--transition); cursor: pointer; width: 100%;
+    border-bottom: 1px solid var(--border);
+  }
+  .dots-menu-item:last-child { border-bottom: none; }
+  .dots-menu-item:hover { background: var(--bg3); color: var(--text); }
+  .dots-menu-item.danger:hover { color: var(--red); }
+  .dots-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* Tracks area */
+  .tracks-area {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 12px; display: flex; flex-direction: column; gap: 10px;
+    min-height: 0;
+  }
+  .track-row {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .track-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .track-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; color: var(--text2); font-family: var(--mono);
+    flex: 1;
+  }
+  .track-label.beat-label { color: #7ecfff; }
+  .track-label.vocal-label { color: var(--green); }
+  .track-vol-row { display: flex; align-items: center; gap: 8px; }
+  .track-vol-label { font-size: 10px; color: var(--text3); font-family: var(--mono); width: 16px; text-align: center; }
+  .track-slider {
+    -webkit-appearance: none; appearance: none;
+    height: 3px; border-radius: 99px;
+    background: var(--bg5); outline: none; cursor: pointer;
+  }
+  .track-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--text2); cursor: pointer; transition: var(--transition);
+  }
+  .track-slider::-webkit-slider-thumb:hover { background: var(--green); }
+  .vol-slider { width: 80px; }
+  .pan-slider { width: 60px; }
+  .track-mute-btn {
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+    font-family: var(--mono); letter-spacing: 0.5px;
+    border: 1px solid var(--border2); color: var(--text3); transition: var(--transition);
+  }
+  .track-mute-btn:hover { border-color: var(--text2); color: var(--text2); }
+  .track-mute-btn.muted { border-color: var(--red); color: var(--red); background: rgba(255,59,59,0.08); }
+
+  /* Waveform canvas */
+  .waveform-wrap {
+    position: relative; overflow: hidden;
+    cursor: crosshair;
+  }
+  .waveform-canvas { width: 100%; display: block; }
+  .playhead-line {
+    position: absolute; top: 0; bottom: 0; width: 2px;
+    background: var(--green); pointer-events: none;
+    box-shadow: 0 0 6px var(--green);
+  }
+  .selection-overlay {
+    position: absolute; top: 0; bottom: 0;
+    background: rgba(0,230,118,0.12); border-left: 1px solid var(--green);
+    border-right: 1px solid var(--green); pointer-events: none;
+  }
+  .import-beat-area {
+    display: flex; align-items: center; justify-content: center;
+    height: 72px; cursor: pointer; transition: var(--transition);
+  }
+  .import-beat-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--radius-sm);
+    border: 1.5px dashed var(--border2); color: var(--text3);
+    font-size: 13px; transition: var(--transition);
+  }
+  .import-beat-btn:hover { border-color: #7ecfff; color: #7ecfff; background: rgba(126,207,255,0.05); }
+  .import-beat-btn svg { width: 16px; height: 16px; }
+
+  /* Level meter */
+  .level-meter-wrap {
+    padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .level-label { font-size: 10px; color: var(--text3); font-family: var(--mono); width: 24px; }
+  .level-bar-bg {
+    flex: 1; height: 6px; background: var(--bg4); border-radius: 99px; overflow: hidden;
+  }
+  .level-bar-fill {
+    height: 100%; width: 0%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--green) 0%, #ffeb3b 70%, var(--red) 100%);
+    transition: width 0.06s linear;
+  }
+
+  /* Transport / Bottom Bar */
+  .studio-bottom {
+    background: var(--bg2); border-top: 1px solid var(--border);
+    padding: 12px 16px 20px; flex-shrink: 0;
+  }
+
+  /* Time ruler */
+  .time-ruler { height: 24px; position: relative; margin-bottom: 8px; overflow: hidden; }
+  .time-ruler canvas { width: 100%; height: 24px; }
+
+  /* Transport */
+  .transport-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .transport-left { display: flex; align-items: center; gap: 8px; }
+  .transport-center { display: flex; align-items: center; gap: 12px; }
+  .transport-right { display: flex; align-items: center; gap: 8px; }
+
+  .transport-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text2); transition: var(--transition);
+  }
+  .transport-btn:hover { border-color: var(--text2); color: var(--text); }
+  .transport-btn svg { width: 18px; height: 18px; }
+  .transport-btn.active { border-color: var(--green); color: var(--green); }
+  .rec-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--green); border: 3px solid rgba(0,230,118,0.3);
+    transition: var(--transition); position: relative;
+    box-shadow: 0 0 20px var(--green-glow);
+  }
+  .rec-btn:hover { box-shadow: 0 0 30px rgba(0,230,118,0.3); transform: scale(1.04); }
+  .rec-btn.recording {
+    background: var(--red); border-color: rgba(255,59,59,0.35);
+    box-shadow: 0 0 24px var(--red-glow);
+    animation: recPulse 1s ease-in-out infinite;
+  }
+  @keyframes recPulse {
+    0%,100% { box-shadow: 0 0 20px var(--red-glow); }
+    50% { box-shadow: 0 0 38px rgba(255,59,59,0.45); }
+  }
+  .rec-btn svg { width: 22px; height: 22px; fill: #000; }
+  .bpm-display {
+    font-family: var(--mono); font-size: 12px; color: var(--text3);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .bpm-val { font-size: 16px; color: var(--text); }
+  .zoom-btns { display: flex; gap: 4px; }
+  .zoom-btn {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text3); font-size: 14px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); transition: var(--transition);
+  }
+  .zoom-btn:hover { color: var(--text); border-color: var(--border2); }
+
+  /* Edit toolbar */
+  .edit-toolbar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px; background: var(--bg3); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0;
+  }
+  .edit-btn {
+    padding: 5px 11px; border-radius: 5px;
+    background: var(--bg4); border: 1px solid var(--border);
+    color: var(--text3); font-size: 12px; font-family: var(--mono);
+    white-space: nowrap; transition: var(--transition);
+  }
+  .edit-btn:hover { background: var(--bg5); border-color: var(--border2); color: var(--text); }
+  .edit-btn:disabled { opacity: 0.35; pointer-events: none; }
+  .edit-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+
+  /* FX Panel */
+  .fx-panel {
+    background: var(--bg2); border-top: 1px solid var(--border);
+    max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+  }
+  .fx-panel.open { max-height: 380px; }
+  .fx-inner { padding: 14px; overflow-y: auto; max-height: 380px; }
+  .fx-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .fx-title { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--green); font-family: var(--mono); }
+  .fx-presets { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 4px; }
+  .preset-btn {
+    padding: 5px 12px; border-radius: 99px; white-space: nowrap;
+    border: 1px solid var(--border2); color: var(--text3);
+    font-size: 11px; font-family: var(--mono); transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .preset-btn:hover { border-color: var(--green-dim); color: var(--green); }
+  .preset-btn.active { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+  .fx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fx-module {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+  }
+  .fx-module-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .fx-module-name { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text2); font-family: var(--mono); }
+  .fx-toggle {
+    width: 30px; height: 16px; border-radius: 99px;
+    background: var(--bg5); border: 1px solid var(--border2);
+    position: relative; cursor: pointer; transition: var(--transition);
+  }
+  .fx-toggle.on { background: var(--green); border-color: var(--green); }
+  .fx-toggle-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 10px; height: 10px; border-radius: 50%; background: var(--text3);
+    transition: var(--transition);
+  }
+  .fx-toggle.on .fx-toggle-knob { left: 16px; background: #000; }
+  .fx-param { margin-bottom: 8px; }
+  .fx-param:last-child { margin-bottom: 0; }
+  .fx-param-label {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px;
+  }
+  .fx-param-name { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+  .fx-param-val { font-size: 10px; color: var(--text2); font-family: var(--mono); }
+  .fx-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 3px; border-radius: 99px;
+    background: var(--bg5); outline: none; cursor: pointer;
+  }
+  .fx-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--green); cursor: pointer;
+  }
+
+  /* Master / Mixing strip */
+  .mix-strip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px 0; flex-wrap: wrap;
+  }
+  .mix-strip-item { display: flex; align-items: center; gap: 6px; }
+  .mix-strip-label { font-size: 10px; color: var(--text3); font-family: var(--mono); white-space: nowrap; }
+  .master-slider { width: 90px; }
+
+  /* Metronome */
+  .metro-btn {
+    padding: 4px 10px; border-radius: 5px; font-size: 11px; font-family: var(--mono);
+    border: 1px solid var(--border); color: var(--text3); transition: var(--transition);
+  }
+  .metro-btn.on { border-color: var(--green); color: var(--green); }
+
+  /* Scrollbar style */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* Rename input */
+  .rename-input {
+    background: transparent; border: none; border-bottom: 1px solid var(--green);
+    color: var(--text); font-size: 14px; font-family: var(--mono); font-weight: 600;
+    text-align: center; width: 180px; padding: 2px 4px; outline: none;
+  }
+
+  /* Help overlay */
+  .help-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 2000; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  .help-overlay.hidden { display: none !important; }
+  .help-box {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 24px; width: min(400px, 90vw);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .help-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--green); font-family: var(--mono); }
+  .help-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .help-item:last-child { border-bottom: none; margin-bottom: 0; }
+  .help-item strong { font-size: 13px; color: var(--text); display: block; margin-bottom: 3px; }
+  .help-item span { font-size: 12px; color: var(--text3); }
+  .kbd {
+    display: inline-block; background: var(--bg4); border: 1px solid var(--border2);
+    border-radius: 3px; padding: 1px 5px; font-family: var(--mono); font-size: 10px;
+    color: var(--text2); margin-right: 4px;
+  }
+
+  /* Live VU during recording */
+  .live-vu {
+    height: 3px; background: var(--bg4);
+    overflow: hidden; position: relative;
+  }
+  .live-vu-bar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--green), #ffeb3b, var(--red));
+    transition: width 0.05s linear;
+  }
+
+  /* FX Panel toggle btn */
+  .fx-toggle-btn {
+    padding: 5px 12px; border-radius: 5px; font-size: 11px; font-family: var(--mono);
+    border: 1px solid var(--border); color: var(--text3); transition: var(--transition);
+    letter-spacing: 0.5px;
+  }
+  .fx-toggle-btn.open { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .fx-grid { grid-template-columns: 1fr; }
+    .mix-strip { gap: 8px; }
+    .vol-slider { width: 60px; }
+    .topbar-timer { display: none; }
+    .transport-right .bpm-display { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── HOME SCREEN ─── -->
+<div id="screen-home" class="screen">
+  <div class="home-header">
+    <div class="home-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm0 16c3.31 0 6-2.69 6-6h2c0 4.08-3.05 7.44-7 7.93V22h-2v-2.07C7.05 19.44 4 16.08 4 12h2c0 3.31 2.69 6 6 6z"/></svg>
+      </div>
+      <div class="logo-text">Zee<span>Studios</span></div>
+    </div>
+    <div class="home-meta">v1.0<br>Recording Studio</div>
+  </div>
+  <div class="home-body">
+    <button class="new-project-btn" id="new-project-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+      New Project
+    </button>
+    <div class="home-section-title">Recent Projects</div>
+    <div class="project-list" id="project-list"></div>
+  </div>
+</div>
+
+<!-- ─── STUDIO SCREEN ─── -->
+<div id="screen-studio" class="screen hidden">
+
+  <!-- Top Bar -->
+  <div class="studio-topbar">
+    <button class="topbar-back" id="back-btn" title="Back to Home">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg>
+    </button>
+    <div class="topbar-title" id="topbar-title">
+      <span>●</span><input class="rename-input" id="project-name-input" value="Untitled Project" maxlength="40">
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-timer" id="topbar-timer">0:00</div>
+      <button class="three-dots-btn icon-btn" id="three-dots-btn" title="More options">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      </button>
+    </div>
+    <!-- Three-dots menu -->
+    <div class="dots-menu hidden" id="dots-menu">
+      <button class="dots-menu-item" id="menu-enhance">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 15H6l7-14v8h5l-7 14z"/></svg> Auto Enhance Voice
+      </button>
+      <button class="dots-menu-item" id="menu-denoise">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Reduce Background Noise
+      </button>
+      <button class="dots-menu-item" id="menu-declick">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5z"/></svg> Clean Clicks/Clacks
+      </button>
+      <button class="dots-menu-item" id="menu-mute">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg> Mute Track
+      </button>
+      <button class="dots-menu-item" id="menu-help">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg> Help / Shortcuts
+      </button>
+      <button class="dots-menu-item" id="menu-export">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg> Export / Download
+      </button>
+      <button class="dots-menu-item danger" id="menu-delete-project">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg> Delete Project
+      </button>
+    </div>
+  </div>
+
+  <!-- Edit toolbar -->
+  <div class="edit-toolbar">
+    <button class="edit-btn" id="btn-undo" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button class="edit-btn" id="btn-redo" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <div class="edit-sep"></div>
+    <button class="edit-btn" id="btn-cut" disabled title="Cut selection">✂ Cut</button>
+    <button class="edit-btn" id="btn-copy" disabled title="Copy selection">⧉ Copy</button>
+    <button class="edit-btn" id="btn-paste" disabled title="Paste">⎗ Paste</button>
+    <button class="edit-btn" id="btn-delete-sel" disabled title="Delete selection">⌫ Delete</button>
+    <button class="edit-btn" id="btn-trim" disabled title="Trim to selection">⊡ Trim</button>
+    <button class="edit-btn" id="btn-split" disabled title="Split at playhead">⋮ Split</button>
+    <div class="edit-sep"></div>
+    <button class="fx-toggle-btn" id="fx-toggle-btn">FX ▾</button>
+  </div>
+
+  <!-- FX Panel -->
+  <div class="fx-panel" id="fx-panel">
+    <div class="fx-inner">
+      <div class="fx-header">
+        <div class="fx-title">Voice FX Chain</div>
+        <div class="fx-presets">
+          <button class="preset-btn" data-preset="clean">Clean Vocal</button>
+          <button class="preset-btn" data-preset="radio">Radio Voice</button>
+          <button class="preset-btn" data-preset="rap">Studio Rap</button>
+          <button class="preset-btn" data-preset="rnb">Soft R&B</button>
+          <button class="preset-btn" data-preset="flat">Flat (Off)</button>
+        </div>
+      </div>
+      <div class="fx-grid">
+        <!-- EQ -->
+        <div class="fx-module">
+          <div class="fx-module-header">
+            <div class="fx-module-name">EQ</div>
+            <div class="fx-toggle on" id="fx-eq-toggle"><div class="fx-toggle-knob"></div></div>
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Low (80Hz)</span><span class="fx-param-val" id="eq-low-val">0dB</span></div>
+            <input type="range" class="fx-slider" id="eq-low" min="-12" max="12" value="0" step="0.5">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Mid (2kHz)</span><span class="fx-param-val" id="eq-mid-val">0dB</span></div>
+            <input type="range" class="fx-slider" id="eq-mid" min="-12" max="12" value="0" step="0.5">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">High (10kHz)</span><span class="fx-param-val" id="eq-high-val">0dB</span></div>
+            <input type="range" class="fx-slider" id="eq-high" min="-12" max="12" value="0" step="0.5">
+          </div>
+        </div>
+        <!-- Compressor -->
+        <div class="fx-module">
+          <div class="fx-module-header">
+            <div class="fx-module-name">Compressor</div>
+            <div class="fx-toggle on" id="fx-comp-toggle"><div class="fx-toggle-knob"></div></div>
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Threshold</span><span class="fx-param-val" id="comp-thresh-val">-18dB</span></div>
+            <input type="range" class="fx-slider" id="comp-thresh" min="-60" max="0" value="-18" step="1">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Ratio</span><span class="fx-param-val" id="comp-ratio-val">4:1</span></div>
+            <input type="range" class="fx-slider" id="comp-ratio" min="1" max="20" value="4" step="0.5">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Gain</span><span class="fx-param-val" id="comp-gain-val">3dB</span></div>
+            <input type="range" class="fx-slider" id="comp-gain" min="0" max="24" value="3" step="0.5">
+          </div>
+        </div>
+        <!-- Reverb -->
+        <div class="fx-module">
+          <div class="fx-module-header">
+            <div class="fx-module-name">Reverb</div>
+            <div class="fx-toggle" id="fx-reverb-toggle"><div class="fx-toggle-knob"></div></div>
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Amount</span><span class="fx-param-val" id="reverb-wet-val">30%</span></div>
+            <input type="range" class="fx-slider" id="reverb-wet" min="0" max="100" value="30" step="1">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Size (s)</span><span class="fx-param-val" id="reverb-size-val">1.8s</span></div>
+            <input type="range" class="fx-slider" id="reverb-size" min="0.1" max="5" value="1.8" step="0.1">
+          </div>
+        </div>
+        <!-- Delay -->
+        <div class="fx-module">
+          <div class="fx-module-header">
+            <div class="fx-module-name">Delay</div>
+            <div class="fx-toggle" id="fx-delay-toggle"><div class="fx-toggle-knob"></div></div>
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Time (ms)</span><span class="fx-param-val" id="delay-time-val">250ms</span></div>
+            <input type="range" class="fx-slider" id="delay-time" min="10" max="1000" value="250" step="10">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Feedback</span><span class="fx-param-val" id="delay-fb-val">35%</span></div>
+            <input type="range" class="fx-slider" id="delay-fb" min="0" max="90" value="35" step="1">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Mix</span><span class="fx-param-val" id="delay-mix-val">25%</span></div>
+            <input type="range" class="fx-slider" id="delay-mix" min="0" max="100" value="25" step="1">
+          </div>
+        </div>
+        <!-- Chorus -->
+        <div class="fx-module">
+          <div class="fx-module-header">
+            <div class="fx-module-name">Chorus / Doubler</div>
+            <div class="fx-toggle" id="fx-chorus-toggle"><div class="fx-toggle-knob"></div></div>
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Depth</span><span class="fx-param-val" id="chorus-depth-val">30%</span></div>
+            <input type="range" class="fx-slider" id="chorus-depth" min="0" max="100" value="30" step="1">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Rate (Hz)</span><span class="fx-param-val" id="chorus-rate-val">1.5Hz</span></div>
+            <input type="range" class="fx-slider" id="chorus-rate" min="0.1" max="8" value="1.5" step="0.1">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Mix</span><span class="fx-param-val" id="chorus-mix-val">20%</span></div>
+            <input type="range" class="fx-slider" id="chorus-mix" min="0" max="100" value="20" step="1">
+          </div>
+        </div>
+        <!-- Pitch -->
+        <div class="fx-module">
+          <div class="fx-module-header">
+            <div class="fx-module-name">Pitch Shift</div>
+            <div class="fx-toggle" id="fx-pitch-toggle"><div class="fx-toggle-knob"></div></div>
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Semitones</span><span class="fx-param-val" id="pitch-val">0st</span></div>
+            <input type="range" class="fx-slider" id="pitch-shift" min="-12" max="12" value="0" step="1">
+          </div>
+          <div class="fx-param">
+            <div class="fx-param-label"><span class="fx-param-name">Formant</span><span class="fx-param-val" id="formant-val">0%</span></div>
+            <input type="range" class="fx-slider" id="formant-shift" min="-50" max="50" value="0" step="1">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracks area -->
+  <div class="tracks-area" id="tracks-area">
+
+    <!-- Beat Track -->
+    <div class="track-row" id="beat-track-row">
+      <div class="track-header">
+        <div class="track-label beat-label">Beat / Music</div>
+        <div class="track-vol-row">
+          <span class="track-vol-label">V</span>
+          <input type="range" class="track-slider vol-slider" id="beat-vol" min="0" max="200" value="100" title="Beat Volume">
+          <span class="track-vol-label">P</span>
+          <input type="range" class="track-slider pan-slider" id="beat-pan" min="-100" max="100" value="0" title="Beat Pan">
+          <button class="track-mute-btn" id="beat-mute-btn">M</button>
+        </div>
+      </div>
+      <div class="import-beat-area" id="import-beat-area">
+        <button class="import-beat-btn" id="import-beat-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          Import Beat / Music
+        </button>
+      </div>
+      <div class="waveform-wrap hidden" id="beat-waveform-wrap" style="height:72px;">
+        <canvas class="waveform-canvas" id="beat-canvas" height="72"></canvas>
+        <div class="playhead-line" id="beat-playhead" style="left:0"></div>
+        <div class="selection-overlay hidden" id="beat-selection"></div>
+      </div>
+      <div class="live-vu" id="beat-vu"><div class="live-vu-bar" id="beat-vu-bar"></div></div>
+    </div>
+
+    <!-- Vocal Track -->
+    <div class="track-row" id="vocal-track-row">
+      <div class="track-header">
+        <div class="track-label vocal-label">Vocal Track</div>
+        <div class="track-vol-row">
+          <span class="track-vol-label">V</span>
+          <input type="range" class="track-slider vol-slider" id="vocal-vol" min="0" max="200" value="100" title="Vocal Volume">
+          <span class="track-vol-label">P</span>
+          <input type="range" class="track-slider pan-slider" id="vocal-pan" min="-100" max="100" value="0" title="Vocal Pan">
+          <button class="track-mute-btn" id="vocal-mute-btn">M</button>
+        </div>
+      </div>
+      <div class="waveform-wrap" id="vocal-waveform-wrap" style="height:90px; cursor:crosshair;">
+        <canvas class="waveform-canvas" id="vocal-canvas" height="90"></canvas>
+        <div class="playhead-line" id="vocal-playhead" style="left:0"></div>
+        <div class="selection-overlay hidden" id="vocal-selection"></div>
+      </div>
+      <div class="live-vu" id="vocal-vu"><div class="live-vu-bar" id="vocal-vu-bar"></div></div>
+      <div class="level-meter-wrap" id="level-meter-wrap">
+        <div class="level-label">L</div>
+        <div class="level-bar-bg"><div class="level-bar-fill" id="level-L"></div></div>
+        <div class="level-label">R</div>
+        <div class="level-bar-bg"><div class="level-bar-fill" id="level-R"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Time Ruler + Transport -->
+  <div class="studio-bottom">
+    <div class="time-ruler"><canvas id="ruler-canvas" height="24"></canvas></div>
+    <div class="mix-strip">
+      <div class="mix-strip-item">
+        <span class="mix-strip-label">MASTER</span>
+        <input type="range" class="track-slider master-slider" id="master-vol" min="0" max="150" value="100" title="Master Volume">
+      </div>
+      <div class="mix-strip-item">
+        <button class="metro-btn" id="metro-btn">CLICK OFF</button>
+        <input type="number" id="bpm-input" min="40" max="240" value="120" style="width:48px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:12px;font-family:var(--mono);text-align:center;">
+        <span class="mix-strip-label">BPM</span>
+      </div>
+      <div class="mix-strip-item" style="margin-left:auto;">
+        <span class="zoom-btns">
+          <button class="zoom-btn" id="zoom-out">-</button>
+          <button class="zoom-btn" id="zoom-in">+</button>
+        </span>
+      </div>
+    </div>
+    <div class="transport-row" style="margin-top:12px;">
+      <div class="transport-left">
+        <button class="transport-btn" id="btn-stop" title="Stop">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+        <button class="transport-btn" id="btn-rewind" title="Rewind to start">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+      </div>
+      <div class="transport-center">
+        <button class="transport-btn" id="btn-play" title="Play/Pause">
+          <svg viewBox="0 0 24 24" fill="currentColor" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="rec-btn" id="rec-btn" title="Record">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm0 16c3.31 0 6-2.69 6-6h2c0 4.08-3.05 7.44-7 7.93V22h-2v-2.07C7.05 19.44 4 16.08 4 12h2c0 3.31 2.69 6 6 6z"/>
+          </svg>
+        </button>
+        <button class="transport-btn" id="btn-forward" title="Skip forward">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2v12h2zm-3.5 6L6 6v12z"/></svg>
+        </button>
+      </div>
+      <div class="transport-right">
+        <div class="bpm-display">
+          <div class="bpm-val" id="pos-display">0:00.0</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">POSITION</div>
+        </div>
+        <button class="transport-btn" id="btn-export-quick" title="Export mix">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Overlay -->
+<div class="help-overlay hidden" id="help-overlay">
+  <div class="help-box">
+    <h3>⌨ ZeeStudios — Shortcuts & Guide</h3>
+    <div class="help-item"><strong>Record</strong><span>Click the big green mic button to start/stop recording. It turns red while recording.</span></div>
+    <div class="help-item"><strong>Play / Pause</strong><span><kbd class="kbd">Space</kbd> or click the play button.</span></div>
+    <div class="help-item"><strong>Stop</strong><span><kbd class="kbd">S</kbd> or click Stop.</span></div>
+    <div class="help-item"><strong>Undo / Redo</strong><span><kbd class="kbd">Ctrl+Z</kbd> / <kbd class="kbd">Ctrl+Y</kbd></span></div>
+    <div class="help-item"><strong>Cut / Copy / Paste</strong><span><kbd class="kbd">Ctrl+X</kbd> / <kbd class="kbd">Ctrl+C</kbd> / <kbd class="kbd">Ctrl+V</kbd> — Select a region on the waveform first by clicking and dragging.</span></div>
+    <div class="help-item"><strong>Select region</strong><span>Click and drag on the vocal waveform to select a region. Then Cut, Trim, or Delete it.</span></div>
+    <div class="help-item"><strong>Import Beat</strong><span>Click "Import Beat / Music" to load any audio file from your device as a backing track.</span></div>
+    <div class="help-item"><strong>FX Chain</strong><span>Click the FX button to open the effects panel. Toggle each effect on/off and adjust the knobs.</span></div>
+    <div class="help-item"><strong>Presets</strong><span>Apply instant voice presets: Clean Vocal, Radio Voice, Studio Rap, Soft R&B.</span></div>
+    <div class="help-item"><strong>Export</strong><span>Click ⋮ → Export, or the download button in transport. Exports a full WAV mixdown.</span></div>
+    <div class="help-item"><strong>Metronome</strong><span>Click CLICK OFF to enable the click track. Set BPM in the box next to it.</span></div>
+    <div class="help-item"><strong>Projects</strong><span>Projects auto-save to your browser's local storage. Use the Home screen to manage them.</span></div>
+    <button class="btn btn-primary" onclick="document.getElementById('help-overlay').classList.add('hidden')" style="width:100%;margin-top:14px;">Got it</button>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay hidden" id="export-modal">
+  <div class="modal">
+    <h3>Export Mix</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Render the full mix (Beat + Vocals + FX) to a WAV file.</p>
+    <div class="modal-row">
+      <span style="font-size:13px;">Format</span>
+      <select id="export-format" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:6px 10px;font-size:13px;">
+        <option value="wav">WAV (Uncompressed)</option>
+        <option value="webm">WebM/Opus (Compressed)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('export-modal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" id="export-confirm-btn">Render &amp; Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal-overlay hidden" id="new-project-modal">
+  <div class="modal">
+    <h3>New Project</h3>
+    <input id="new-project-name" type="text" placeholder="Project name…" maxlength="40"
+      style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:16px;">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('new-project-modal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" id="create-project-btn">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<input type="file" id="beat-file-input" accept="audio/*" style="display:none">
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════
+   ZeeStudios — Main App Logic
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── STATE ───
+const state = {
+  projects: [],         // { id, name, createdAt, duration, vocalBuffer, beatBuffer, fxSettings, volSettings }
+  currentProject: null,
+  audioCtx: null,
+  // Recording
+  mediaStream: null,
+  mediaRecorder: null,
+  recordingChunks: [],
+  isRecording: false,
+  recordingStart: 0,
+  recordTimerInterval: null,
+  // Playback
+  isPlaying: false,
+  playhead: 0,           // seconds
+  playStartTime: 0,      // audioCtx.currentTime when play started
+  playheadAtStart: 0,    // playhead position when play started
+  animFrameId: null,
+  // Audio buffers
+  vocalBuffer: null,     // AudioBuffer
+  beatBuffer: null,      // AudioBuffer
+  vocalMuted: false,
+  beatMuted: false,
+  vocalClipboard: null,  // AudioBuffer (cut/copy)
+  // Selection (seconds)
+  selStart: null, selEnd: null,
+  isDraggingSelection: false, selDragAnchor: 0,
+  // Undo/Redo
+  undoStack: [], redoStack: [],
+  // Zoom
+  zoom: 1.0,             // pixels per second multiplier
+  scrollX: 0,
+  // FX nodes
+  fxNodes: null,
+  fxEnabled: { eq: true, comp: true, reverb: false, delay: false, chorus: false, pitch: false },
+  fxSettings: {
+    eqLow: 0, eqMid: 0, eqHigh: 0,
+    compThresh: -18, compRatio: 4, compGain: 3,
+    reverbWet: 0.3, reverbSize: 1.8,
+    delayTime: 0.25, delayFeedback: 0.35, delayMix: 0.25,
+    chorusDepth: 0.3, chorusRate: 1.5, chorusMix: 0.2,
+    pitchShift: 0, formant: 0,
+  },
+  volSettings: {
+    beat: 1.0, vocal: 1.0, master: 1.0,
+    beatPan: 0, vocalPan: 0,
+  },
+  // Metronome
+  metroOn: false, bpm: 120,
+  metroInterval: null, metroBeat: 0,
+  // Active source nodes during playback
+  vocalSource: null, beatSource: null, metroSource: null,
+};
+
+// ─── DOM HELPERS ───
+const $ = id => document.getElementById(id);
+const showScreen = id => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  $(id).classList.remove('hidden');
+};
+const toast = (msg, type='') => {
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' '+type : '');
+  t.textContent = msg;
+  $('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+};
+
+// ─── STORAGE ───
+const STORAGE_KEY = 'zeestudios_projects';
+const saveProjects = () => {
+  const toSave = state.projects.map(p => ({
+    id: p.id, name: p.name, createdAt: p.createdAt, duration: p.duration,
+    fxSettings: p.fxSettings, volSettings: p.volSettings,
+    fxEnabled: p.fxEnabled,
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+};
+const loadProjects = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.projects = JSON.parse(raw);
+  } catch(e) {}
+};
+
+// ─── AUDIO CONTEXT ───
+function ensureAudioCtx() {
+  if (!state.audioCtx || state.audioCtx.state === 'closed') {
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+  }
+  if (state.audioCtx.state === 'suspended') state.audioCtx.resume();
+  return state.audioCtx;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOME SCREEN
+   ═══════════════════════════════════════════════════════════════ */
+
+function renderHome() {
+  loadProjects();
+  const list = $('project-list');
+  list.innerHTML = '';
+  if (!state.projects.length) {
+    list.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm0 16c3.31 0 6-2.69 6-6h2c0 4.08-3.05 7.44-7 7.93V22h-2v-2.07C7.05 19.44 4 16.08 4 12h2c0 3.31 2.69 6 6 6z"/></svg>
+      <p>No projects yet.<br>Create your first project above.</p>
+    </div>`;
+    return;
+  }
+  [...state.projects].reverse().forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    const dur = p.duration ? formatTime(p.duration) : '0:00';
+    const date = new Date(p.createdAt).toLocaleDateString();
+    card.innerHTML = `
+      <div class="project-card-icon"><svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm0 16c3.31 0 6-2.69 6-6h2c0 4.08-3.05 7.44-7 7.93V22h-2v-2.07C7.05 19.44 4 16.08 4 12h2c0 3.31 2.69 6 6 6z"/></svg></div>
+      <div class="project-card-info">
+        <div class="project-card-name">${escHtml(p.name)}</div>
+        <div class="project-card-meta">${dur} · ${date}</div>
+      </div>
+      <div class="project-card-actions">
+        <button class="icon-btn" title="Open" data-open="${p.id}">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+        </button>
+        <button class="icon-btn danger" title="Delete" data-del="${p.id}">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+      </div>`;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('[data-open]').forEach(btn => btn.addEventListener('click', () => openProject(btn.dataset.open)));
+  list.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => deleteProject(btn.dataset.del)));
+}
+
+function escHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function formatTime(s) {
+  const m = Math.floor(s/60), sec = (s%60).toFixed(1).padStart(4,'0');
+  return `${m}:${sec}`;
+}
+function formatTimeSec(s) {
+  const m = Math.floor(s/60), sec = Math.floor(s%60).toString().padStart(2,'0');
+  return `${m}:${sec}`;
+}
+
+function openProject(id) {
+  const p = state.projects.find(x => x.id === id);
+  if (!p) return;
+  state.currentProject = p;
+  if (p.fxSettings) Object.assign(state.fxSettings, p.fxSettings);
+  if (p.volSettings) Object.assign(state.volSettings, p.volSettings);
+  if (p.fxEnabled) Object.assign(state.fxEnabled, p.fxEnabled);
+  loadStudioScreen();
+  showScreen('screen-studio');
+}
+
+function deleteProject(id) {
+  state.projects = state.projects.filter(x => x.id !== id);
+  saveProjects();
+  renderHome();
+  toast('Project deleted');
+}
+
+$('new-project-btn').addEventListener('click', () => {
+  $('new-project-name').value = '';
+  $('new-project-modal').classList.remove('hidden');
+  setTimeout(() => $('new-project-name').focus(), 60);
+});
+$('new-project-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('create-project-btn').click(); });
+$('create-project-btn').addEventListener('click', () => {
+  const name = $('new-project-name').value.trim() || 'Untitled Project';
+  const p = { id: Date.now().toString(), name, createdAt: Date.now(), duration: 0, fxSettings: {...state.fxSettings}, volSettings: {...state.volSettings}, fxEnabled: {...state.fxEnabled} };
+  state.projects.push(p);
+  saveProjects();
+  renderHome();
+  $('new-project-modal').classList.add('hidden');
+  openProject(p.id);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   STUDIO SCREEN — Setup
+   ═══════════════════════════════════════════════════════════════ */
+
+function loadStudioScreen() {
+  const p = state.currentProject;
+  // Reset runtime
+  stopPlayback(true);
+  state.vocalBuffer = null;
+  state.beatBuffer = null;
+  state.selStart = null; state.selEnd = null;
+  state.undoStack = []; state.redoStack = [];
+  state.zoom = 1.0; state.scrollX = 0;
+  state.playhead = 0;
+
+  // UI
+  $('project-name-input').value = p.name;
+  $('beat-waveform-wrap').classList.add('hidden');
+  $('import-beat-area').classList.remove('hidden');
+  $('topbar-timer').textContent = '0:00';
+  $('topbar-timer').classList.remove('recording');
+
+  applyFxSettingsToUI();
+  applyVolSettingsToUI();
+  updateEditButtons();
+  drawVocalWaveform();
+  drawBeatWaveform();
+  drawRuler();
+  updatePositionDisplay();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROJECT NAME
+   ═══════════════════════════════════════════════════════════════ */
+
+$('project-name-input').addEventListener('input', () => {
+  if (state.currentProject) {
+    state.currentProject.name = $('project-name-input').value.trim() || 'Untitled';
+    saveProjects();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+
+$('back-btn').addEventListener('click', () => {
+  stopPlayback(true);
+  stopRecording();
+  stopMetronome();
+  showScreen('screen-home');
+  renderHome();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   THREE-DOTS MENU
+   ═══════════════════════════════════════════════════════════════ */
+
+$('three-dots-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  $('dots-menu').classList.toggle('hidden');
+});
+document.addEventListener('click', () => $('dots-menu').classList.add('hidden'));
+$('dots-menu').addEventListener('click', e => e.stopPropagation());
+
+$('menu-enhance').addEventListener('click', () => { applyPreset('clean'); toast('Voice enhanced ✓', 'success'); });
+$('menu-denoise').addEventListener('click', () => { applyDenoiseEffect(); toast('Noise reduction applied ✓', 'success'); });
+$('menu-declick').addEventListener('click', () => { applyDeclickEffect(); toast('Clicks cleaned ✓', 'success'); });
+$('menu-mute').addEventListener('click', () => {
+  state.vocalMuted = !state.vocalMuted;
+  $('vocal-mute-btn').classList.toggle('muted', state.vocalMuted);
+  toast(state.vocalMuted ? 'Vocal muted' : 'Vocal unmuted');
+});
+$('menu-help').addEventListener('click', () => { $('help-overlay').classList.remove('hidden'); });
+$('menu-export').addEventListener('click', () => { $('export-modal').classList.remove('hidden'); });
+$('menu-delete-project').addEventListener('click', () => {
+  if (confirm('Delete this project?')) {
+    deleteProject(state.currentProject.id);
+    showScreen('screen-home');
+    renderHome();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   IMPORT BEAT
+   ═══════════════════════════════════════════════════════════════ */
+
+$('import-beat-btn').addEventListener('click', () => $('beat-file-input').click());
+$('beat-file-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const ctx = ensureAudioCtx();
+      const buf = await ctx.decodeAudioData(ev.target.result.slice(0));
+      state.beatBuffer = buf;
+      $('import-beat-area').classList.add('hidden');
+      $('beat-waveform-wrap').classList.remove('hidden');
+      drawBeatWaveform();
+      drawRuler();
+      toast('Beat imported ✓', 'success');
+    } catch(err) { toast('Could not load audio file', 'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   RECORDING
+   ═══════════════════════════════════════════════════════════════ */
+
+$('rec-btn').addEventListener('click', () => {
+  if (state.isRecording) stopRecording();
+  else startRecording();
+});
+
+async function startRecording() {
+  ensureAudioCtx();
+  try {
+    state.mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 44100 }
+    });
+  } catch(e) {
+    toast('Microphone access denied. Please allow mic and try again.', 'error'); return;
+  }
+  state.recordingChunks = [];
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+  state.mediaRecorder = new MediaRecorder(state.mediaStream, { mimeType });
+  state.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) state.recordingChunks.push(e.data); };
+  state.mediaRecorder.onstop = finalizeRecording;
+  state.mediaRecorder.start(100);
+  state.isRecording = true;
+  state.recordingStart = Date.now();
+  $('rec-btn').classList.add('recording');
+  $('topbar-timer').classList.add('recording');
+
+  // Live VU via Web Audio analyser
+  const ctx = state.audioCtx;
+  state.liveAnalyser = ctx.createAnalyser();
+  state.liveAnalyser.fftSize = 256;
+  state.liveSource = ctx.createMediaStreamSource(state.mediaStream);
+  state.liveSource.connect(state.liveAnalyser);
+  state.liveVuActive = true;
+  animateLiveVU();
+
+  state.recordTimerInterval = setInterval(() => {
+    const elapsed = (Date.now() - state.recordingStart) / 1000;
+    $('topbar-timer').textContent = formatTimeSec(elapsed);
+  }, 200);
+
+  // Play beat during recording if available
+  if (state.beatBuffer && !state.isPlaying) {
+    playBeatOnly();
+  }
+
+  toast('Recording started…', 'success');
+}
+
+function stopRecording() {
+  if (!state.isRecording) return;
+  state.isRecording = false;
+  if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') state.mediaRecorder.stop();
+  if (state.mediaStream) { state.mediaStream.getTracks().forEach(t => t.stop()); state.mediaStream = null; }
+  clearInterval(state.recordTimerInterval);
+  state.liveVuActive = false;
+  if (state.liveBeatSource) { try { state.liveBeatSource.stop(); } catch(e) {} state.liveBeatSource = null; }
+  $('rec-btn').classList.remove('recording');
+  $('topbar-timer').classList.remove('recording');
+  $('topbar-timer').textContent = formatTimeSec(0);
+  $('vocal-vu-bar').style.width = '0%';
+  toast('Recording stopped');
+}
+
+function playBeatOnly() {
+  if (!state.beatBuffer) return;
+  const ctx = ensureAudioCtx();
+  const src = ctx.createBufferSource();
+  src.buffer = state.beatBuffer;
+  src.loop = true;
+  const g = ctx.createGain();
+  g.gain.value = state.volSettings.beat;
+  src.connect(g); g.connect(ctx.destination);
+  src.start(0);
+  state.liveBeatSource = src;
+}
+
+async function finalizeRecording() {
+  const blob = new Blob(state.recordingChunks, { type: 'audio/webm' });
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const ctx = ensureAudioCtx();
+      const buf = await ctx.decodeAudioData(ev.target.result.slice(0));
+      pushUndo();
+      state.vocalBuffer = buf;
+      if (state.currentProject) {
+        state.currentProject.duration = buf.duration;
+        saveProjects();
+      }
+      drawVocalWaveform();
+      drawRuler();
+      toast('Recording saved ✓', 'success');
+    } catch(e) { toast('Error processing recording', 'error'); }
+  };
+  reader.readAsArrayBuffer(blob);
+}
+
+function animateLiveVU() {
+  if (!state.liveVuActive) return;
+  const data = new Uint8Array(state.liveAnalyser.frequencyBinCount);
+  state.liveAnalyser.getByteTimeDomainData(data);
+  let max = 0;
+  for (let i=0; i<data.length; i++) { const v = Math.abs(data[i]-128)/128; if(v>max) max=v; }
+  $('vocal-vu-bar').style.width = Math.min(100, max*200) + '%';
+  requestAnimationFrame(animateLiveVU);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WAVEFORM DRAWING
+   ═══════════════════════════════════════════════════════════════ */
+
+function drawWaveform(canvas, buffer, color, highlight) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
+  canvas.width = W;
+  const H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0,0,W,H);
+
+  if (!buffer) {
+    ctx.strokeStyle = color + '33';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+    return;
+  }
+
+  const data = buffer.getChannelData(0);
+  const totalSec = buffer.duration;
+  const visibleSec = W / (state.zoom * 80);
+  const startSec = state.scrollX;
+  const endSec = Math.min(startSec + visibleSec, totalSec);
+  const startSample = Math.floor(startSec * buffer.sampleRate);
+  const endSample = Math.floor(endSec * buffer.sampleRate);
+  const samplesPerPixel = Math.max(1, Math.floor((endSample - startSample) / W));
+
+  ctx.fillStyle = color + '18';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+
+  for (let px=0; px<W; px++) {
+    const i0 = startSample + px * samplesPerPixel;
+    let min=0, max=0;
+    for (let j=0; j<samplesPerPixel; j++) {
+      const v = data[i0+j] || 0;
+      if (v > max) max = v; if (v < min) min = v;
+    }
+    const yMax = H/2 - max*(H/2-2);
+    const yMin = H/2 - min*(H/2-2);
+    ctx.fillRect(px, yMax, 1, Math.max(1, yMin - yMax));
+    if (px%2===0) { ctx.beginPath(); ctx.moveTo(px, yMax); ctx.lineTo(px, yMin); ctx.stroke(); }
+  }
+}
+
+function drawVocalWaveform() {
+  const canvas = $('vocal-canvas');
+  drawWaveform(canvas, state.vocalBuffer, '#00e676');
+  drawSelectionOnWaveform();
+  drawPlayheadOn(canvas, 'vocal-playhead');
+}
+function drawBeatWaveform() {
+  const canvas = $('beat-canvas');
+  if (!state.beatBuffer) return;
+  drawWaveform(canvas, state.beatBuffer, '#7ecfff');
+  drawPlayheadOn(canvas, 'beat-playhead');
+}
+
+function drawPlayheadOn(canvas, phId) {
+  const buf = phId === 'vocal-playhead' ? state.vocalBuffer : state.beatBuffer;
+  const dur = buf ? buf.duration : 0;
+  const W = canvas.offsetWidth || 600;
+  let x = 0;
+  if (dur > 0) {
+    const visibleSec = W / (state.zoom * 80);
+    x = ((state.playhead - state.scrollX) / visibleSec) * W;
+  }
+  $(phId).style.left = Math.max(0, x) + 'px';
+}
+
+function drawSelectionOnWaveform() {
+  const canvas = $('vocal-canvas');
+  const overlay = $('vocal-selection');
+  if (state.selStart === null || state.selEnd === null) { overlay.classList.add('hidden'); return; }
+  const W = canvas.offsetWidth || 600;
+  const buf = state.vocalBuffer;
+  if (!buf) { overlay.classList.add('hidden'); return; }
+  const visibleSec = W / (state.zoom * 80);
+  const s1 = ((Math.min(state.selStart, state.selEnd) - state.scrollX) / visibleSec) * W;
+  const s2 = ((Math.max(state.selStart, state.selEnd) - state.scrollX) / visibleSec) * W;
+  overlay.style.left = Math.max(0, s1) + 'px';
+  overlay.style.width = Math.max(0, s2-s1) + 'px';
+  overlay.classList.remove('hidden');
+}
+
+function drawRuler() {
+  const canvas = $('ruler-canvas');
+  const W = canvas.parentElement.offsetWidth || 600;
+  canvas.width = W; canvas.height = 24;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,24);
+  ctx.fillStyle = '#181818'; ctx.fillRect(0,0,W,24);
+
+  const dur = (state.vocalBuffer || state.beatBuffer)?.duration || 60;
+  const visibleSec = W / (state.zoom * 80);
+  const step = pickRulerStep(visibleSec);
+  const startSec = state.scrollX;
+  ctx.strokeStyle = '#383838'; ctx.fillStyle = '#606060';
+  ctx.font = '9px Space Mono, monospace';
+  for (let t = Math.floor(startSec/step)*step; t < startSec+visibleSec; t += step) {
+    const x = ((t-startSec)/visibleSec)*W;
+    ctx.beginPath(); ctx.moveTo(x, 8); ctx.lineTo(x, 24); ctx.stroke();
+    ctx.fillText(formatTimeSec(t), x+2, 10);
+  }
+}
+
+function pickRulerStep(visibleSec) {
+  const steps = [0.1,0.25,0.5,1,2,5,10,15,30,60,120,300];
+  for (const s of steps) if (visibleSec/s < 20) return s;
+  return 300;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SELECTION (click/drag on vocal waveform)
+   ═══════════════════════════════════════════════════════════════ */
+
+const vocalWrap = $('vocal-waveform-wrap');
+vocalWrap.addEventListener('mousedown', onWaveMouseDown);
+vocalWrap.addEventListener('touchstart', onWaveTouchStart, { passive: true });
+
+function onWaveMouseDown(e) {
+  const t = waveXToTime(e.clientX, vocalWrap);
+  state.isDraggingSelection = true;
+  state.selDragAnchor = t;
+  state.selStart = t; state.selEnd = t;
+  const move = ev => { state.selEnd = waveXToTime(ev.clientX, vocalWrap); drawSelectionOnWaveform(); updateEditButtons(); };
+  const up = () => {
+    state.isDraggingSelection = false;
+    state.playhead = Math.min(state.selStart, state.selEnd);
+    if (Math.abs(state.selEnd - state.selStart) < 0.01) { state.selStart = null; state.selEnd = null; }
+    drawSelectionOnWaveform(); updateEditButtons(); updatePlayheads();
+    window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
+  };
+  window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+}
+
+function onWaveTouchStart(e) {
+  const touch = e.touches[0];
+  const t = waveXToTime(touch.clientX, vocalWrap);
+  state.selDragAnchor = t; state.selStart = t; state.selEnd = t; state.isDraggingSelection = true;
+  const move = ev => { state.selEnd = waveXToTime(ev.touches[0].clientX, vocalWrap); drawSelectionOnWaveform(); updateEditButtons(); };
+  const end = () => {
+    state.isDraggingSelection = false;
+    state.playhead = Math.min(state.selStart, state.selEnd);
+    if (Math.abs(state.selEnd - state.selStart) < 0.01) { state.selStart = null; state.selEnd = null; }
+    drawSelectionOnWaveform(); updateEditButtons(); updatePlayheads();
+    vocalWrap.removeEventListener('touchmove', move); vocalWrap.removeEventListener('touchend', end);
+  };
+  vocalWrap.addEventListener('touchmove', move, { passive: true }); vocalWrap.addEventListener('touchend', end);
+}
+
+function waveXToTime(clientX, wrap) {
+  const rect = wrap.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const W = wrap.offsetWidth;
+  const dur = state.vocalBuffer?.duration || 60;
+  const visibleSec = W / (state.zoom * 80);
+  return Math.max(0, Math.min(dur, state.scrollX + (x/W)*visibleSec));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PLAYBACK
+   ═══════════════════════════════════════════════════════════════ */
+
+$('btn-play').addEventListener('click', togglePlay);
+$('btn-stop').addEventListener('click', () => stopPlayback(true));
+$('btn-rewind').addEventListener('click', () => { stopPlayback(true); state.playhead=0; updatePlayheads(); updatePositionDisplay(); drawRuler(); });
+$('btn-forward').addEventListener('click', () => {
+  const dur = state.vocalBuffer?.duration || state.beatBuffer?.duration || 60;
+  state.playhead = Math.min(state.playhead + 5, dur);
+  updatePlayheads(); updatePositionDisplay();
+});
+
+function togglePlay() {
+  if (state.isPlaying) pausePlayback();
+  else startPlayback();
+}
+
+function startPlayback() {
+  if (state.isRecording) return;
+  const ctx = ensureAudioCtx();
+  state.isPlaying = true;
+  state.playStartTime = ctx.currentTime;
+  state.playheadAtStart = state.playhead;
+
+  // Update play button icon
+  $('play-icon').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+
+  // Schedule vocal
+  if (state.vocalBuffer && !state.vocalMuted) {
+    const chain = buildFxChain(ctx);
+    const src = ctx.createBufferSource();
+    src.buffer = state.vocalBuffer;
+    src.connect(chain.input);
+    chain.output.connect(buildVolPanNode(ctx, state.volSettings.vocal, state.volSettings.vocalPan));
+    buildVolPanNode(ctx, state.volSettings.vocal, state.volSettings.vocalPan).connect(buildMasterNode(ctx));
+    // Reconnect properly:
+    const vGain = ctx.createGain(); vGain.gain.value = state.volSettings.vocal;
+    const vPan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    chain.output.connect(vGain);
+    if (vPan) { vGain.connect(vPan); vPan.pan.value = state.volSettings.vocalPan; vPan.connect(state.masterGain); }
+    else { vGain.connect(state.masterGain); }
+    const offset = state.playhead;
+    src.start(0, offset);
+    state.vocalSource = src;
+  }
+
+  // Schedule beat
+  if (state.beatBuffer && !state.beatMuted) {
+    const src = ctx.createBufferSource();
+    src.buffer = state.beatBuffer;
+    const bGain = ctx.createGain(); bGain.gain.value = state.volSettings.beat;
+    const bPan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    src.connect(bGain);
+    if (bPan) { bGain.connect(bPan); bPan.pan.value = state.volSettings.beatPan; bPan.connect(state.masterGain); }
+    else { bGain.connect(state.masterGain); }
+    const offset = Math.min(state.playhead, state.beatBuffer.duration);
+    src.start(0, offset);
+    state.beatSource = src;
+  }
+
+  state.animFrameId = requestAnimationFrame(animatePlayback);
+}
+
+function pausePlayback() {
+  state.isPlaying = false;
+  $('play-icon').setAttribute('d', 'M8 5v14l11-7z');
+  if (state.vocalSource) { try { state.vocalSource.stop(); } catch(e) {} state.vocalSource = null; }
+  if (state.beatSource) { try { state.beatSource.stop(); } catch(e) {} state.beatSource = null; }
+  cancelAnimationFrame(state.animFrameId);
+}
+
+function stopPlayback(resetHead) {
+  pausePlayback();
+  if (resetHead) {
+    state.playhead = 0;
+    updatePlayheads();
+    updatePositionDisplay();
+    drawRuler();
+  }
+}
+
+function animatePlayback() {
+  if (!state.isPlaying) return;
+  const ctx = state.audioCtx;
+  const elapsed = ctx.currentTime - state.playStartTime;
+  state.playhead = state.playheadAtStart + elapsed;
+
+  const dur = Math.max(state.vocalBuffer?.duration||0, state.beatBuffer?.duration||0);
+  if (dur > 0 && state.playhead >= dur) { stopPlayback(true); return; }
+
+  updatePlayheads();
+  updatePositionDisplay();
+
+  // Auto-scroll
+  autoScrollIfNeeded();
+
+  // VU meter
+  if (state.masterAnalyser) {
+    const data = new Uint8Array(state.masterAnalyser.frequencyBinCount);
+    state.masterAnalyser.getByteTimeDomainData(data);
+    let max = 0;
+    for (let i=0; i<data.length; i++) { const v = Math.abs(data[i]-128)/128; if(v>max) max=v; }
+    const pct = Math.min(100, max*200);
+    $('level-L').style.width = pct+'%';
+    $('level-R').style.width = pct*0.9+'%';
+  }
+
+  state.animFrameId = requestAnimationFrame(animatePlayback);
+}
+
+function autoScrollIfNeeded() {
+  const W = $('vocal-canvas').offsetWidth || 600;
+  const visibleSec = W / (state.zoom * 80);
+  if (state.playhead > state.scrollX + visibleSec * 0.85) {
+    state.scrollX = state.playhead - visibleSec * 0.1;
+    drawVocalWaveform(); drawBeatWaveform(); drawRuler();
+  }
+}
+
+function updatePlayheads() {
+  const vc = $('vocal-canvas');
+  const bc = $('beat-canvas');
+  const W = vc.offsetWidth || 600;
+  const dur = Math.max(state.vocalBuffer?.duration||0, state.beatBuffer?.duration||0, 10);
+  const visibleSec = W / (state.zoom * 80);
+  const x = Math.max(0, ((state.playhead - state.scrollX) / visibleSec) * W);
+  $('vocal-playhead').style.left = x + 'px';
+  $('beat-playhead').style.left = x + 'px';
+  // redraw ruler tick
+  drawRuler();
+}
+
+function updatePositionDisplay() {
+  $('pos-display').textContent = formatTime(state.playhead);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUDIO GRAPH SETUP
+   ═══════════════════════════════════════════════════════════════ */
+
+function ensureMasterGraph() {
+  if (state.masterGain && state.audioCtx && state.audioCtx.state !== 'closed') return;
+  const ctx = ensureAudioCtx();
+  state.masterGain = ctx.createGain();
+  state.masterGain.gain.value = state.volSettings.master;
+  state.masterAnalyser = ctx.createAnalyser();
+  state.masterAnalyser.fftSize = 256;
+  state.masterGain.connect(state.masterAnalyser);
+  state.masterAnalyser.connect(ctx.destination);
+}
+
+function buildFxChain(ctx) {
+  ensureMasterGraph();
+  const s = state.fxSettings;
+  const enabled = state.fxEnabled;
+
+  // HP filter (always on, gentle noise gate)
+  const hpf = ctx.createBiquadFilter();
+  hpf.type = 'highpass'; hpf.frequency.value = 80;
+
+  // EQ: Low shelf, Mid peak, High shelf
+  const eqLow = ctx.createBiquadFilter();
+  eqLow.type = 'lowshelf'; eqLow.frequency.value = 80; eqLow.gain.value = enabled.eq ? s.eqLow : 0;
+  const eqMid = ctx.createBiquadFilter();
+  eqMid.type = 'peaking'; eqMid.frequency.value = 2000; eqMid.Q.value = 1; eqMid.gain.value = enabled.eq ? s.eqMid : 0;
+  const eqHigh = ctx.createBiquadFilter();
+  eqHigh.type = 'highshelf'; eqHigh.frequency.value = 10000; eqHigh.gain.value = enabled.eq ? s.eqHigh : 0;
+
+  // Compressor
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = enabled.comp ? s.compThresh : 0;
+  comp.ratio.value = enabled.comp ? s.compRatio : 1;
+  comp.attack.value = 0.003; comp.release.value = 0.1; comp.knee.value = 6;
+  const makeupGain = ctx.createGain();
+  makeupGain.gain.value = enabled.comp ? Math.pow(10, s.compGain/20) : 1;
+
+  // Chain: hpf → eqLow → eqMid → eqHigh → comp → makeupGain
+  hpf.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh);
+  eqHigh.connect(comp); comp.connect(makeupGain);
+  let last = makeupGain;
+
+  // Reverb (convolver with synthetic IR)
+  const reverbDry = ctx.createGain();
+  const reverbWet = ctx.createGain();
+  reverbDry.gain.value = 1;
+  reverbWet.gain.value = enabled.reverb ? s.reverbWet : 0;
+  const conv = ctx.createConvolver();
+  conv.buffer = makeImpulseResponse(ctx, s.reverbSize, 2);
+  const reverbMix = ctx.createGain();
+  last.connect(reverbDry); last.connect(conv); conv.connect(reverbWet);
+  reverbDry.connect(reverbMix); reverbWet.connect(reverbMix);
+  last = reverbMix;
+
+  // Delay
+  const delayNode = ctx.createDelay(2.0);
+  delayNode.delayTime.value = s.delayTime;
+  const delayFB = ctx.createGain(); delayFB.gain.value = enabled.delay ? s.delayFeedback : 0;
+  const delayMixDry = ctx.createGain(); delayMixDry.gain.value = 1;
+  const delayMixWet = ctx.createGain(); delayMixWet.gain.value = enabled.delay ? s.delayMix : 0;
+  const delaySum = ctx.createGain();
+  last.connect(delayMixDry); last.connect(delayNode);
+  delayNode.connect(delayFB); delayFB.connect(delayNode); // feedback loop
+  delayNode.connect(delayMixWet);
+  delayMixDry.connect(delaySum); delayMixWet.connect(delaySum);
+  last = delaySum;
+
+  // Chorus (LFO modulated delay)
+  if (enabled.chorus) {
+    const chorusDelay = ctx.createDelay(0.1);
+    chorusDelay.delayTime.value = 0.03;
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine'; lfo.frequency.value = s.chorusRate;
+    const lfoGain = ctx.createGain(); lfoGain.gain.value = s.chorusDepth * 0.01;
+    lfo.connect(lfoGain); lfoGain.connect(chorusDelay.delayTime);
+    const chorusMixDry = ctx.createGain(); chorusMixDry.gain.value = 1;
+    const chorusMixWet = ctx.createGain(); chorusMixWet.gain.value = s.chorusMix;
+    const chorusSum = ctx.createGain();
+    last.connect(chorusMixDry); last.connect(chorusDelay); chorusDelay.connect(chorusMixWet);
+    chorusMixDry.connect(chorusSum); chorusMixWet.connect(chorusSum);
+    lfo.start();
+    last = chorusSum;
+  }
+
+  return { input: hpf, output: last };
+}
+
+function buildVolPanNode(ctx, vol, pan) {
+  const g = ctx.createGain(); g.gain.value = vol;
+  return g;
+}
+
+function buildMasterNode(ctx) { ensureMasterGraph(); return state.masterGain; }
+
+// Synthetic reverb impulse response
+function makeImpulseResponse(ctx, duration, decay) {
+  const sampleRate = ctx.sampleRate;
+  const length = sampleRate * duration;
+  const ir = ctx.createBuffer(2, length, sampleRate);
+  for (let ch=0; ch<2; ch++) {
+    const data = ir.getChannelData(ch);
+    for (let i=0; i<length; i++) {
+      data[i] = (Math.random()*2-1) * Math.pow(1 - i/length, decay);
+    }
+  }
+  return ir;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRANSPORT VOLUME / PAN
+   ═══════════════════════════════════════════════════════════════ */
+
+$('beat-vol').addEventListener('input', e => {
+  state.volSettings.beat = e.target.value / 100;
+  if (state.currentProject) { state.currentProject.volSettings = {...state.volSettings}; saveProjects(); }
+});
+$('vocal-vol').addEventListener('input', e => {
+  state.volSettings.vocal = e.target.value / 100;
+  if (state.currentProject) { state.currentProject.volSettings = {...state.volSettings}; saveProjects(); }
+});
+$('master-vol').addEventListener('input', e => {
+  state.volSettings.master = e.target.value / 100;
+  ensureMasterGraph();
+  if (state.masterGain) state.masterGain.gain.value = state.volSettings.master;
+  if (state.currentProject) { state.currentProject.volSettings = {...state.volSettings}; saveProjects(); }
+});
+$('beat-pan').addEventListener('input', e => {
+  state.volSettings.beatPan = e.target.value / 100;
+  if (state.currentProject) { state.currentProject.volSettings = {...state.volSettings}; saveProjects(); }
+});
+$('vocal-pan').addEventListener('input', e => {
+  state.volSettings.vocalPan = e.target.value / 100;
+  if (state.currentProject) { state.currentProject.volSettings = {...state.volSettings}; saveProjects(); }
+});
+
+$('beat-mute-btn').addEventListener('click', () => {
+  state.beatMuted = !state.beatMuted;
+  $('beat-mute-btn').classList.toggle('muted', state.beatMuted);
+});
+$('vocal-mute-btn').addEventListener('click', () => {
+  state.vocalMuted = !state.vocalMuted;
+  $('vocal-mute-btn').classList.toggle('muted', state.vocalMuted);
+});
+
+function applyVolSettingsToUI() {
+  $('beat-vol').value = (state.volSettings.beat || 1) * 100;
+  $('vocal-vol').value = (state.volSettings.vocal || 1) * 100;
+  $('master-vol').value = (state.volSettings.master || 1) * 100;
+  $('beat-pan').value = (state.volSettings.beatPan || 0) * 100;
+  $('vocal-pan').value = (state.volSettings.vocalPan || 0) * 100;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EDITING TOOLS
+   ═══════════════════════════════════════════════════════════════ */
+
+function getSelectionSamples() {
+  if (!state.vocalBuffer || state.selStart === null || state.selEnd === null) return null;
+  const sr = state.vocalBuffer.sampleRate;
+  const s0 = Math.floor(Math.min(state.selStart, state.selEnd) * sr);
+  const s1 = Math.floor(Math.max(state.selStart, state.selEnd) * sr);
+  return { s0: Math.max(0, s0), s1: Math.min(state.vocalBuffer.length, s1) };
+}
+
+function pushUndo() {
+  if (state.vocalBuffer) {
+    state.undoStack.push(copyBuffer(state.vocalBuffer));
+    if (state.undoStack.length > 20) state.undoStack.shift();
+  } else {
+    state.undoStack.push(null);
+  }
+  state.redoStack = [];
+  updateEditButtons();
+}
+
+function copyBuffer(buf) {
+  if (!buf) return null;
+  const ctx = ensureAudioCtx();
+  const copy = ctx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  for (let ch=0; ch<buf.numberOfChannels; ch++) copy.getChannelData(ch).set(buf.getChannelData(ch));
+  return copy;
+}
+
+function sliceBuffer(buf, startSample, endSample) {
+  const ctx = ensureAudioCtx();
+  const len = endSample - startSample;
+  if (len <= 0) return null;
+  const out = ctx.createBuffer(buf.numberOfChannels, len, buf.sampleRate);
+  for (let ch=0; ch<buf.numberOfChannels; ch++) out.getChannelData(ch).set(buf.getChannelData(ch).slice(startSample, endSample));
+  return out;
+}
+
+function concatBuffers(a, b) {
+  if (!a) return b; if (!b) return a;
+  const ctx = ensureAudioCtx();
+  const len = a.length + b.length;
+  const out = ctx.createBuffer(a.numberOfChannels, len, a.sampleRate);
+  for (let ch=0; ch<a.numberOfChannels; ch++) {
+    const d = out.getChannelData(ch);
+    d.set(a.getChannelData(ch), 0);
+    d.set(b.getChannelData(ch), a.length);
+  }
+  return out;
+}
+
+$('btn-undo').addEventListener('click', doUndo);
+$('btn-redo').addEventListener('click', doRedo);
+$('btn-cut').addEventListener('click', doCut);
+$('btn-copy').addEventListener('click', doCopy);
+$('btn-paste').addEventListener('click', doPaste);
+$('btn-delete-sel').addEventListener('click', doDeleteSelection);
+$('btn-trim').addEventListener('click', doTrim);
+$('btn-split').addEventListener('click', doSplit);
+
+function doUndo() {
+  if (!state.undoStack.length) return;
+  const prev = state.undoStack.pop();
+  if (state.vocalBuffer) state.redoStack.push(copyBuffer(state.vocalBuffer));
+  state.vocalBuffer = prev;
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Undo');
+}
+function doRedo() {
+  if (!state.redoStack.length) return;
+  const next = state.redoStack.pop();
+  if (state.vocalBuffer) state.undoStack.push(copyBuffer(state.vocalBuffer));
+  state.vocalBuffer = next;
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Redo');
+}
+function doCut() {
+  const sel = getSelectionSamples(); if (!sel) return;
+  pushUndo();
+  state.vocalClipboard = sliceBuffer(state.vocalBuffer, sel.s0, sel.s1);
+  const before = sliceBuffer(state.vocalBuffer, 0, sel.s0);
+  const after = sliceBuffer(state.vocalBuffer, sel.s1, state.vocalBuffer.length);
+  state.vocalBuffer = concatBuffers(before, after);
+  state.selStart = null; state.selEnd = null;
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Selection cut', 'success');
+}
+function doCopy() {
+  const sel = getSelectionSamples(); if (!sel) return;
+  state.vocalClipboard = sliceBuffer(state.vocalBuffer, sel.s0, sel.s1);
+  toast('Selection copied');
+  $('btn-paste').disabled = false;
+}
+function doPaste() {
+  if (!state.vocalClipboard) return;
+  pushUndo();
+  const ctx = ensureAudioCtx();
+  const insertAt = Math.floor(state.playhead * (state.vocalBuffer?.sampleRate || 44100));
+  const buf = state.vocalBuffer;
+  const before = buf ? sliceBuffer(buf, 0, insertAt) : null;
+  const after = buf ? sliceBuffer(buf, insertAt, buf.length) : null;
+  state.vocalBuffer = concatBuffers(concatBuffers(before, state.vocalClipboard), after);
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Pasted', 'success');
+}
+function doDeleteSelection() {
+  const sel = getSelectionSamples(); if (!sel) return;
+  pushUndo();
+  const before = sliceBuffer(state.vocalBuffer, 0, sel.s0);
+  const after = sliceBuffer(state.vocalBuffer, sel.s1, state.vocalBuffer.length);
+  state.vocalBuffer = concatBuffers(before, after);
+  state.selStart = null; state.selEnd = null;
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Selection deleted', 'success');
+}
+function doTrim() {
+  const sel = getSelectionSamples(); if (!sel) return;
+  pushUndo();
+  state.vocalBuffer = sliceBuffer(state.vocalBuffer, sel.s0, sel.s1);
+  state.selStart = null; state.selEnd = null; state.playhead = 0;
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Trimmed to selection', 'success');
+}
+function doSplit() {
+  // Split at playhead — creates two separate clips, shows info
+  if (!state.vocalBuffer) return;
+  const splitAt = Math.floor(state.playhead * state.vocalBuffer.sampleRate);
+  if (splitAt <= 0 || splitAt >= state.vocalBuffer.length) { toast('Move playhead inside the vocal to split', 'error'); return; }
+  pushUndo();
+  // For simplicity: keep region before playhead as main buffer, put region after in clipboard
+  const before = sliceBuffer(state.vocalBuffer, 0, splitAt);
+  const after = sliceBuffer(state.vocalBuffer, splitAt, state.vocalBuffer.length);
+  state.vocalBuffer = before;
+  state.vocalClipboard = after;
+  drawVocalWaveform(); updateEditButtons(); drawRuler();
+  toast('Split at playhead — tail in clipboard', 'success');
+}
+
+function updateEditButtons() {
+  const hasBuf = !!state.vocalBuffer;
+  const hasSel = hasBuf && state.selStart !== null && state.selEnd !== null && Math.abs(state.selEnd-state.selStart) > 0.01;
+  $('btn-undo').disabled = !state.undoStack.length;
+  $('btn-redo').disabled = !state.redoStack.length;
+  $('btn-cut').disabled = !hasSel;
+  $('btn-copy').disabled = !hasSel;
+  $('btn-paste').disabled = !state.vocalClipboard;
+  $('btn-delete-sel').disabled = !hasSel;
+  $('btn-trim').disabled = !hasSel;
+  $('btn-split').disabled = !hasBuf;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ZOOM
+   ═══════════════════════════════════════════════════════════════ */
+
+$('zoom-in').addEventListener('click', () => { state.zoom = Math.min(state.zoom*1.5, 20); redrawAll(); });
+$('zoom-out').addEventListener('click', () => { state.zoom = Math.max(state.zoom/1.5, 0.2); redrawAll(); });
+function redrawAll() { drawVocalWaveform(); drawBeatWaveform(); drawRuler(); }
+
+/* ═══════════════════════════════════════════════════════════════
+   FX PANEL
+   ═══════════════════════════════════════════════════════════════ */
+
+$('fx-toggle-btn').addEventListener('click', () => {
+  const panel = $('fx-panel');
+  const open = panel.classList.toggle('open');
+  $('fx-toggle-btn').classList.toggle('open', open);
+});
+
+// FX toggles
+['eq','comp','reverb','delay','chorus','pitch'].forEach(name => {
+  const toggle = $(`fx-${name}-toggle`);
+  if (!toggle) return;
+  toggle.addEventListener('click', () => {
+    state.fxEnabled[name] = !state.fxEnabled[name];
+    toggle.classList.toggle('on', state.fxEnabled[name]);
+    if (state.currentProject) { state.currentProject.fxEnabled = {...state.fxEnabled}; saveProjects(); }
+  });
+});
+
+// FX sliders
+const fxSliderMap = {
+  'eq-low': ['eqLow', v => v+'dB', 'eq-low-val'],
+  'eq-mid': ['eqMid', v => v+'dB', 'eq-mid-val'],
+  'eq-high': ['eqHigh', v => v+'dB', 'eq-high-val'],
+  'comp-thresh': ['compThresh', v => v+'dB', 'comp-thresh-val'],
+  'comp-ratio': ['compRatio', v => v+':1', 'comp-ratio-val'],
+  'comp-gain': ['compGain', v => v+'dB', 'comp-gain-val'],
+  'reverb-wet': ['reverbWet', v => v+'%', 'reverb-wet-val'],
+  'reverb-size': ['reverbSize', v => v+'s', 'reverb-size-val'],
+  'delay-time': ['delayTime', v => v+'ms', 'delay-time-val'],
+  'delay-fb': ['delayFeedback', v => v+'%', 'delay-fb-val'],
+  'delay-mix': ['delayMix', v => v+'%', 'delay-mix-val'],
+  'chorus-depth': ['chorusDepth', v => v+'%', 'chorus-depth-val'],
+  'chorus-rate': ['chorusRate', v => v+'Hz', 'chorus-rate-val'],
+  'chorus-mix': ['chorusMix', v => v+'%', 'chorus-mix-val'],
+  'pitch-shift': ['pitchShift', v => v+'st', 'pitch-val'],
+  'formant-shift': ['formant', v => v+'%', 'formant-val'],
+};
+
+Object.entries(fxSliderMap).forEach(([id, [key, fmt, valId]]) => {
+  const el = $(id); if (!el) return;
+  el.addEventListener('input', () => {
+    const raw = parseFloat(el.value);
+    // Special normalization
+    let v = raw;
+    if (key === 'reverbWet') { v = raw/100; state.fxSettings.reverbWet = v; $(valId).textContent = raw+'%'; }
+    else if (key === 'delayTime') { v = raw/1000; state.fxSettings.delayTime = v; $(valId).textContent = raw+'ms'; }
+    else if (key === 'delayFeedback') { v = raw/100; state.fxSettings.delayFeedback = v; $(valId).textContent = raw+'%'; }
+    else if (key === 'delayMix') { v = raw/100; state.fxSettings.delayMix = v; $(valId).textContent = raw+'%'; }
+    else if (key === 'chorusDepth') { v = raw/100; state.fxSettings.chorusDepth = v; $(valId).textContent = raw+'%'; }
+    else if (key === 'chorusMix') { v = raw/100; state.fxSettings.chorusMix = v; $(valId).textContent = raw+'%'; }
+    else { state.fxSettings[key] = raw; $(valId).textContent = fmt(raw); }
+    if (state.currentProject) { state.currentProject.fxSettings = {...state.fxSettings}; saveProjects(); }
+  });
+});
+
+function applyFxSettingsToUI() {
+  // EQ
+  $('eq-low').value = state.fxSettings.eqLow; $('eq-low-val').textContent = state.fxSettings.eqLow+'dB';
+  $('eq-mid').value = state.fxSettings.eqMid; $('eq-mid-val').textContent = state.fxSettings.eqMid+'dB';
+  $('eq-high').value = state.fxSettings.eqHigh; $('eq-high-val').textContent = state.fxSettings.eqHigh+'dB';
+  // Compressor
+  $('comp-thresh').value = state.fxSettings.compThresh; $('comp-thresh-val').textContent = state.fxSettings.compThresh+'dB';
+  $('comp-ratio').value = state.fxSettings.compRatio; $('comp-ratio-val').textContent = state.fxSettings.compRatio+':1';
+  $('comp-gain').value = state.fxSettings.compGain; $('comp-gain-val').textContent = state.fxSettings.compGain+'dB';
+  // Reverb
+  $('reverb-wet').value = Math.round((state.fxSettings.reverbWet||0.3)*100); $('reverb-wet-val').textContent = Math.round((state.fxSettings.reverbWet||0.3)*100)+'%';
+  $('reverb-size').value = state.fxSettings.reverbSize; $('reverb-size-val').textContent = state.fxSettings.reverbSize+'s';
+  // Delay
+  $('delay-time').value = Math.round((state.fxSettings.delayTime||0.25)*1000); $('delay-time-val').textContent = Math.round((state.fxSettings.delayTime||0.25)*1000)+'ms';
+  $('delay-fb').value = Math.round((state.fxSettings.delayFeedback||0.35)*100); $('delay-fb-val').textContent = Math.round((state.fxSettings.delayFeedback||0.35)*100)+'%';
+  $('delay-mix').value = Math.round((state.fxSettings.delayMix||0.25)*100); $('delay-mix-val').textContent = Math.round((state.fxSettings.delayMix||0.25)*100)+'%';
+  // Chorus
+  $('chorus-depth').value = Math.round((state.fxSettings.chorusDepth||0.3)*100); $('chorus-depth-val').textContent = Math.round((state.fxSettings.chorusDepth||0.3)*100)+'%';
+  $('chorus-rate').value = state.fxSettings.chorusRate; $('chorus-rate-val').textContent = state.fxSettings.chorusRate+'Hz';
+  $('chorus-mix').value = Math.round((state.fxSettings.chorusMix||0.2)*100); $('chorus-mix-val').textContent = Math.round((state.fxSettings.chorusMix||0.2)*100)+'%';
+  // Pitch
+  $('pitch-shift').value = state.fxSettings.pitchShift; $('pitch-val').textContent = state.fxSettings.pitchShift+'st';
+  $('formant-shift').value = state.fxSettings.formant; $('formant-val').textContent = state.fxSettings.formant+'%';
+
+  // Toggles
+  ['eq','comp','reverb','delay','chorus','pitch'].forEach(n => {
+    const tog = $(`fx-${n}-toggle`);
+    if (tog) tog.classList.toggle('on', state.fxEnabled[n] !== false);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRESETS
+   ═══════════════════════════════════════════════════════════════ */
+
+const PRESETS = {
+  clean: { eqLow: 2, eqMid: 1, eqHigh: 2, compThresh: -20, compRatio: 3, compGain: 4, reverbWet: 0.15, reverbSize: 1.2, delayTime: 0.3, delayFeedback: 0.2, delayMix: 0.1, chorusDepth: 0.1, chorusRate: 1.5, chorusMix: 0.08, pitchShift: 0, formant: 0, enabled: {eq:true,comp:true,reverb:true,delay:false,chorus:false,pitch:false} },
+  radio: { eqLow: -4, eqMid: 5, eqHigh: 3, compThresh: -24, compRatio: 8, compGain: 6, reverbWet: 0.05, reverbSize: 0.5, delayTime: 0.12, delayFeedback: 0.15, delayMix: 0.1, chorusDepth: 0.05, chorusRate: 3, chorusMix: 0.05, pitchShift: 0, formant: 0, enabled: {eq:true,comp:true,reverb:true,delay:false,chorus:false,pitch:false} },
+  rap: { eqLow: 4, eqMid: 2, eqHigh: 4, compThresh: -16, compRatio: 6, compGain: 5, reverbWet: 0.2, reverbSize: 1.5, delayTime: 0.2, delayFeedback: 0.3, delayMix: 0.2, chorusDepth: 0.2, chorusRate: 2, chorusMix: 0.15, pitchShift: 0, formant: 0, enabled: {eq:true,comp:true,reverb:true,delay:true,chorus:false,pitch:false} },
+  rnb: { eqLow: 2, eqMid: -1, eqHigh: 3, compThresh: -22, compRatio: 4, compGain: 3, reverbWet: 0.4, reverbSize: 2.5, delayTime: 0.35, delayFeedback: 0.35, delayMix: 0.22, chorusDepth: 0.35, chorusRate: 1.2, chorusMix: 0.25, pitchShift: 0, formant: 0, enabled: {eq:true,comp:true,reverb:true,delay:true,chorus:true,pitch:false} },
+  flat: { eqLow: 0, eqMid: 0, eqHigh: 0, compThresh: 0, compRatio: 1, compGain: 0, reverbWet: 0, reverbSize: 1, delayTime: 0.25, delayFeedback: 0, delayMix: 0, chorusDepth: 0, chorusRate: 1, chorusMix: 0, pitchShift: 0, formant: 0, enabled: {eq:false,comp:false,reverb:false,delay:false,chorus:false,pitch:false} },
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    applyPreset(btn.dataset.preset);
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  Object.assign(state.fxSettings, p);
+  if (p.enabled) Object.assign(state.fxEnabled, p.enabled);
+  applyFxSettingsToUI();
+  if (state.currentProject) {
+    state.currentProject.fxSettings = {...state.fxSettings};
+    state.currentProject.fxEnabled = {...state.fxEnabled};
+    saveProjects();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DSP EFFECTS (applied to buffer offline)
+   ═══════════════════════════════════════════════════════════════ */
+
+async function processBufferOffline(buffer, processFn) {
+  // Process using OfflineAudioContext
+  const ctx = new OfflineAudioContext(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const result = await processFn(ctx, src);
+  return result;
+}
+
+async function applyDenoiseEffect() {
+  if (!state.vocalBuffer) { toast('No vocal recording to process', 'error'); return; }
+  pushUndo();
+  const ctx = ensureAudioCtx();
+  // Noise gate + high-pass filter via OfflineAudioContext
+  const offline = new OfflineAudioContext(state.vocalBuffer.numberOfChannels, state.vocalBuffer.length, state.vocalBuffer.sampleRate);
+  const src = offline.createBufferSource();
+  src.buffer = state.vocalBuffer;
+  const hpf = offline.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=120;
+  const lpf = offline.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=12000;
+  const notch = offline.createBiquadFilter(); notch.type='notch'; notch.frequency.value=60; notch.Q.value=30; // hum notch
+  src.connect(hpf); hpf.connect(notch); notch.connect(lpf); lpf.connect(offline.destination);
+  src.start();
+  state.vocalBuffer = await offline.startRendering();
+  drawVocalWaveform();
+}
+
+async function applyDeclickEffect() {
+  if (!state.vocalBuffer) { toast('No vocal recording to process', 'error'); return; }
+  pushUndo();
+  // Smooth out transients by gentle LP filtering
+  const offline = new OfflineAudioContext(state.vocalBuffer.numberOfChannels, state.vocalBuffer.length, state.vocalBuffer.sampleRate);
+  const src = offline.createBufferSource();
+  src.buffer = state.vocalBuffer;
+  // Gentle lowpass to smooth clicks (de-click = reduce high-frequency transients)
+  const lp = offline.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=8000; lp.Q.value=0.5;
+  const hp = offline.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=100;
+  src.connect(hp); hp.connect(lp); lp.connect(offline.destination);
+  src.start();
+  state.vocalBuffer = await offline.startRendering();
+  drawVocalWaveform();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   METRONOME (click track)
+   ═══════════════════════════════════════════════════════════════ */
+
+$('metro-btn').addEventListener('click', () => {
+  state.metroOn = !state.metroOn;
+  $('metro-btn').textContent = state.metroOn ? 'CLICK ON' : 'CLICK OFF';
+  $('metro-btn').classList.toggle('on', state.metroOn);
+  if (state.metroOn) startMetronome(); else stopMetronome();
+});
+$('bpm-input').addEventListener('change', () => {
+  state.bpm = parseInt($('bpm-input').value) || 120;
+  if (state.metroOn) { stopMetronome(); startMetronome(); }
+});
+
+function startMetronome() {
+  stopMetronome();
+  const intervalMs = 60000 / state.bpm;
+  state.metroBeat = 0;
+  state.metroInterval = setInterval(() => {
+    if (!state.metroOn || state.isRecording || state.isPlaying) return;
+    playClick(state.metroBeat++ % 4 === 0);
+  }, intervalMs);
+  // Play one now
+  playClick(true);
+}
+
+function stopMetronome() {
+  clearInterval(state.metroInterval);
+}
+
+function playClick(accent) {
+  const ctx = ensureAudioCtx();
+  const osc = ctx.createOscillator();
+  const env = ctx.createGain();
+  osc.connect(env); env.connect(ctx.destination);
+  osc.frequency.value = accent ? 1200 : 800;
+  osc.type = 'square';
+  const now = ctx.currentTime;
+  env.gain.setValueAtTime(accent ? 0.4 : 0.2, now);
+  env.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+  osc.start(now); osc.stop(now + 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT / DOWNLOAD
+   ═══════════════════════════════════════════════════════════════ */
+
+$('btn-export-quick').addEventListener('click', () => $('export-modal').classList.remove('hidden'));
+$('export-confirm-btn').addEventListener('click', exportMix);
+
+async function exportMix() {
+  if (!state.vocalBuffer && !state.beatBuffer) { toast('Nothing to export', 'error'); return; }
+  $('export-modal').classList.add('hidden');
+  toast('Rendering mix…');
+
+  const sampleRate = 44100;
+  const dur = Math.max(state.vocalBuffer?.duration||0, state.beatBuffer?.duration||0);
+  if (dur <= 0) { toast('No audio to export', 'error'); return; }
+
+  const offline = new OfflineAudioContext(2, Math.ceil(dur*sampleRate), sampleRate);
+
+  // Beat
+  if (state.beatBuffer && !state.beatMuted) {
+    const src = offline.createBufferSource();
+    src.buffer = state.beatBuffer;
+    const g = offline.createGain(); g.gain.value = state.volSettings.beat;
+    src.connect(g); g.connect(offline.destination);
+    src.start(0);
+  }
+
+  // Vocal + FX chain
+  if (state.vocalBuffer && !state.vocalMuted) {
+    const chain = buildFxChainOffline(offline);
+    const src = offline.createBufferSource();
+    src.buffer = state.vocalBuffer;
+    src.connect(chain.input);
+    const vg = offline.createGain(); vg.gain.value = state.volSettings.vocal;
+    chain.output.connect(vg); vg.connect(offline.destination);
+    src.start(0);
+  }
+
+  // Master gain
+  // (OfflineAudioContext doesn't support the same master chain simply — output IS destination)
+
+  const rendered = await offline.startRendering();
+  const wav = bufferToWav(rendered);
+  const blob = new Blob([wav], { type: 'audio/wav' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = (state.currentProject?.name || 'ZeeStudios_Mix').replace(/\s+/g,'_');
+  a.download = `${name}_${new Date().toISOString().slice(0,10)}.wav`;
+  a.href = url;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('Export complete ✓', 'success');
+}
+
+function buildFxChainOffline(offline) {
+  const s = state.fxSettings;
+  const enabled = state.fxEnabled;
+  const hpf = offline.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=80;
+  const eqLow = offline.createBiquadFilter(); eqLow.type='lowshelf'; eqLow.frequency.value=80; eqLow.gain.value=enabled.eq?s.eqLow:0;
+  const eqMid = offline.createBiquadFilter(); eqMid.type='peaking'; eqMid.frequency.value=2000; eqMid.Q.value=1; eqMid.gain.value=enabled.eq?s.eqMid:0;
+  const eqHigh = offline.createBiquadFilter(); eqHigh.type='highshelf'; eqHigh.frequency.value=10000; eqHigh.gain.value=enabled.eq?s.eqHigh:0;
+  const comp = offline.createDynamicsCompressor();
+  comp.threshold.value=enabled.comp?s.compThresh:0; comp.ratio.value=enabled.comp?s.compRatio:1; comp.attack.value=0.003; comp.release.value=0.1;
+  const makeupG = offline.createGain(); makeupG.gain.value=enabled.comp?Math.pow(10,s.compGain/20):1;
+  hpf.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh); eqHigh.connect(comp); comp.connect(makeupG);
+
+  const reverbDry = offline.createGain(); const reverbWet = offline.createGain();
+  reverbDry.gain.value=1; reverbWet.gain.value=enabled.reverb?s.reverbWet:0;
+  const conv = offline.createConvolver(); conv.buffer=makeImpulseResponse(offline, s.reverbSize, 2);
+  const reverbMix = offline.createGain();
+  makeupG.connect(reverbDry); makeupG.connect(conv); conv.connect(reverbWet);
+  reverbDry.connect(reverbMix); reverbWet.connect(reverbMix);
+
+  const delayNode = offline.createDelay(2.0); delayNode.delayTime.value=s.delayTime;
+  const delayFB = offline.createGain(); delayFB.gain.value=enabled.delay?s.delayFeedback:0;
+  const dDry = offline.createGain(); dDry.gain.value=1;
+  const dWet = offline.createGain(); dWet.gain.value=enabled.delay?s.delayMix:0;
+  const dSum = offline.createGain();
+  reverbMix.connect(dDry); reverbMix.connect(delayNode); delayNode.connect(delayFB); delayFB.connect(delayNode); delayNode.connect(dWet);
+  dDry.connect(dSum); dWet.connect(dSum);
+
+  return { input: hpf, output: dSum };
+}
+
+// PCM WAV encoder
+function bufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const len = buffer.length;
+  const data = new Float32Array(len * numCh);
+  for (let ch=0; ch<numCh; ch++) {
+    const chData = buffer.getChannelData(ch);
+    for (let i=0; i<len; i++) data[i*numCh+ch] = chData[i];
+  }
+  const pcm = new Int16Array(data.length);
+  for (let i=0; i<data.length; i++) pcm[i] = Math.max(-32768, Math.min(32767, Math.round(data[i]*32767)));
+  const wavBytes = pcm.buffer.byteLength;
+  const ab = new ArrayBuffer(44 + wavBytes);
+  const view = new DataView(ab);
+  const write = (off, val, bytes) => { for(let i=0;i<bytes;i++) view.setUint8(off+i,(val>>(8*i))&0xff); };
+  const writeStr = (off, str) => { for(let i=0;i<str.length;i++) view.setUint8(off+i,str.charCodeAt(i)); };
+  writeStr(0,'RIFF'); write(4, 36+wavBytes, 4); writeStr(8,'WAVE');
+  writeStr(12,'fmt '); write(16,16,4); write(20,1,2); write(22,numCh,2);
+  write(24,sampleRate,4); write(28,sampleRate*numCh*2,4); write(32,numCh*2,2); write(34,16,2);
+  writeStr(36,'data'); write(40,wavBytes,4);
+  new Int16Array(ab,44).set(pcm);
+  return ab;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+   ═══════════════════════════════════════════════════════════════ */
+
+document.addEventListener('keydown', e => {
+  if ($('screen-studio').classList.contains('hidden')) return;
+  if (e.target.tagName === 'INPUT') return;
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  else if (e.key.toLowerCase() === 's' && !ctrl) { e.preventDefault(); stopPlayback(true); }
+  else if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); doUndo(); }
+  else if (ctrl && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); doRedo(); }
+  else if (ctrl && e.key.toLowerCase() === 'x') { e.preventDefault(); doCut(); }
+  else if (ctrl && e.key.toLowerCase() === 'c') { e.preventDefault(); doCopy(); }
+  else if (ctrl && e.key.toLowerCase() === 'v') { e.preventDefault(); doPaste(); }
+  else if (e.key === '+' || e.key === '=') { state.zoom = Math.min(state.zoom*1.3, 20); redrawAll(); }
+  else if (e.key === '-') { state.zoom = Math.max(state.zoom/1.3, 0.2); redrawAll(); }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE REDRAWS
+   ═══════════════════════════════════════════════════════════════ */
+
+window.addEventListener('resize', () => {
+  if (!$('screen-studio').classList.contains('hidden')) redrawAll();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   ENSURE MASTER GRAPH INIT
+   ═══════════════════════════════════════════════════════════════ */
+document.addEventListener('click', () => {
+  ensureAudioCtx();
+  ensureMasterGraph();
+}, { once: true });
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════════ */
+loadProjects();
+renderHome();
+showScreen('screen-home');
+</script>
+</body>
+</html>
